@@ -1,0 +1,21 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 12,
+    "sourceType": "module"
+  },
+  "plugins": ["@typescript-eslint", "sort-keys-fix", "sort-destructure-keys"],
+  "rules": {
+    "linebreak-style": ["error", "unix"],
+    "quotes": ["error", "single"],
+    "semi": ["error", "never"],
+    "sort-keys-fix/sort-keys-fix": "error",
+    "sort-destructure-keys/sort-destructure-keys": "error",
+    "@typescript-eslint/explicit-module-boundary-types": "off"
+  }
+}
