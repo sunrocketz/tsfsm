@@ -17,7 +17,21 @@ import {
   QueryConstraint,
   QuerySnapshot,
   SnapshotOptions,
+  UpdateData,
+  writeBatch as writeDocs,
 } from 'firebase/firestore'
+import { chunk } from 'lodash'
+
+enum WriteType {
+  DELETE = 'Delete',
+  SET = 'Set',
+  UPDATE = 'Update',
+}
+type Write<T> = {
+  type: WriteType
+  data?: T | UpdateData
+  ref: DocumentReference<T>
+}
 
 export function collection<T = DocumentData>(
   fs: FirebaseFirestore,
@@ -180,6 +194,35 @@ export function listenDocs<T = DocumentData>(
     error: cb.error,
     next: cb.next,
   })
+}
+
+export function writeBatch<T>(fs: FirebaseFirestore, writes: Write<T>[]) {
+  const batches: ReturnType<typeof writeDocs>[] = []
+
+  if (writes.length > 500) {
+    const chunkWrites = chunk(writes, 500)
+    for (const chunk of chunkWrites) {
+      const batch = writeDocs(fs)
+
+      for (const { data, ref, type } of chunk) {
+        if (type === WriteType.UPDATE && data) batches[0].update(ref, data)
+        if (type === WriteType.DELETE) batches[0].delete(ref)
+        if (type === WriteType.SET && data) batches[0].set(ref, data)
+      }
+
+      batches.push(batch)
+    }
+  }
+
+  if (writes.length <= 500) {
+    for (const { data, ref, type } of writes) {
+      if (type === WriteType.UPDATE && data) batches[0].update(ref, data)
+      if (type === WriteType.DELETE) batches[0].delete(ref)
+      if (type === WriteType.SET && data) batches[0].set(ref, data)
+    }
+  }
+
+  return Promise.all(batches.map((batch) => batch.commit()))
 }
 
 export function parseFieldPath<
