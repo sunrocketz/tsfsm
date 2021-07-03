@@ -8,6 +8,7 @@ import {
   FieldPath,
   FirebaseFirestore,
   getDoc as getDocument,
+  getDocs as getDocuments,
   query as qry,
   Query,
   QueryConstraint,
@@ -83,7 +84,71 @@ export async function getDoc<T = DocumentData, U = Partial<T>>(
   }
 }
 
-function parseFieldPath<
+export async function getDocs<T = DocumentData, U = Partial<T>>(
+  query: Query<T>,
+  dataOnly = false,
+  options?: SnapshotOptions,
+  ...getFields: { fieldPath: string; options?: SnapshotOptions }[]
+) {
+  const snaps = (await getDocuments(query)).docs
+  if (dataOnly)
+    return snaps.map((snap) => {
+      if (getFields.length) {
+        const d = getFields.map(({ fieldPath, options }) => ({
+          data: snap.get(fieldPath, options),
+          fieldPath,
+        }))
+        let data: U | Record<string, unknown> = {}
+        for (const v of d) {
+          const parsedFieldPath: {
+            [key: string]: unknown
+          } = parseFieldPath(v.fieldPath as string, data)
+          data = {
+            ...data,
+            ...parsedFieldPath,
+          }
+        }
+        return data as U
+      }
+
+      return snap.data()
+    })
+
+  return snaps.map((snap) => {
+    const { exists, get, id, metadata } = snap
+    if (getFields.length) {
+      const d = getFields.map(({ fieldPath, options }) => ({
+        data: get(fieldPath, options),
+        fieldPath,
+      }))
+      let data: U | Record<string, unknown> = {}
+      for (const v of d) {
+        const parsedFieldPath: {
+          [key: string]: unknown
+        } = parseFieldPath(v.fieldPath as string, data)
+        data = {
+          ...data,
+          ...parsedFieldPath,
+        }
+      }
+
+      return {
+        data,
+        exists,
+        id,
+        metadata,
+      }
+    }
+    return {
+      data: snap.data(),
+      exists,
+      id,
+      metadata,
+    }
+  })
+}
+
+export function parseFieldPath<
   U = {
     [key: string]: unknown
   },
