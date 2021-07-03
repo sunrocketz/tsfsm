@@ -5,13 +5,17 @@ import {
   doc as docRef,
   DocumentData,
   DocumentReference,
+  DocumentSnapshot,
   FieldPath,
   FirebaseFirestore,
+  FirestoreError,
   getDoc as getDocument,
   getDocs as getDocuments,
+  onSnapshot,
   query as qry,
   Query,
   QueryConstraint,
+  QuerySnapshot,
   SnapshotOptions,
 } from 'firebase/firestore'
 
@@ -145,6 +149,36 @@ export async function getDocs<T = DocumentData, U = Partial<T>>(
       id,
       metadata,
     }
+  })
+}
+
+export function listenDoc<T = DocumentData>(
+  ref: DocumentReference<T>,
+  cb: {
+    complete?: () => void
+    error?: (err: FirestoreError) => void
+    next?: (snap: DocumentSnapshot<T>) => void
+  },
+) {
+  onSnapshot(ref, {
+    complete: cb.complete,
+    error: cb.error,
+    next: cb.next,
+  })
+}
+
+export function listenDocs<T = DocumentData>(
+  query: Query<T>,
+  cb: {
+    complete?: () => void
+    error?: (err: FirestoreError) => void
+    next?: (snaps: QuerySnapshot<T>) => void
+  },
+) {
+  onSnapshot(query, {
+    complete: cb.complete,
+    error: cb.error,
+    next: cb.next,
   })
 }
 
