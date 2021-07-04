@@ -21,7 +21,7 @@ import {
   UpdateData,
   writeBatch as writeDocs,
 } from 'firebase/firestore'
-import { chunk } from 'lodash'
+import chunk from 'lodash/chunk'
 
 export function collection<T = DocumentData>(
   fs: FirebaseFirestore,
@@ -191,6 +191,7 @@ export function listenDocs<T = DocumentData>(
 }
 
 export function delDoc<T = DocumentData>(fs: FirebaseFirestore, ref: DocumentReference<T>) {
+  // Need logic to delete subcollections. Given each Document Ref provides a relative path from base to that ref
   return deleteDoc(ref)
 }
 
