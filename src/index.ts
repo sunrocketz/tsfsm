@@ -2,6 +2,7 @@ import {
   collection as colRef,
   collectionGroup as colGroup,
   CollectionReference,
+  deleteDoc,
   doc as docRef,
   DocumentData,
   DocumentReference,
@@ -21,17 +22,6 @@ import {
   writeBatch as writeDocs,
 } from 'firebase/firestore'
 import { chunk } from 'lodash'
-
-enum WriteType {
-  DELETE = 'Delete',
-  SET = 'Set',
-  UPDATE = 'Update',
-}
-type Write<T> = {
-  type: WriteType
-  data?: T | UpdateData
-  ref: DocumentReference<T>
-}
 
 export function collection<T = DocumentData>(
   fs: FirebaseFirestore,
@@ -55,6 +45,10 @@ export function doc<T = DocumentData>(
   ...pathSegments: string[]
 ) {
   return docRef(fs, path, ...pathSegments) as DocumentReference<T>
+}
+
+export async function docs<T = DocumentData>(query: Query<T>) {
+  return (await getDocuments(query)).docs.map((snap) => snap.ref)
 }
 
 export async function getDoc<T = DocumentData, U = Partial<T>>(
@@ -196,6 +190,20 @@ export function listenDocs<T = DocumentData>(
   })
 }
 
+export function delDoc<T = DocumentData>(fs: FirebaseFirestore, ref: DocumentReference<T>) {
+  return deleteDoc(ref)
+}
+
+export enum WriteType {
+  DELETE = 'Delete',
+  SET = 'Set',
+  UPDATE = 'Update',
+}
+export type Write<T> = {
+  type: WriteType
+  data?: T | UpdateData
+  ref: DocumentReference<T>
+}
 export function writeBatch<T>(fs: FirebaseFirestore, writes: Write<T>[]) {
   const batches: ReturnType<typeof writeDocs>[] = []
 
